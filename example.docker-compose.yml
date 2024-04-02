@@ -1,0 +1,20 @@
+# https://www.keycloak.org/getting-started/getting-started-docker
+# https://github.com/asatrya/keycloak-traefik-tutorial/blob/master/docker-compose.yml
+
+# The secret name must match the env variable name!
+secrets:
+  KC_DB_PASSWORD:
+    file: .secret.postgres-pass
+  KEYCLOAK_ADMIN:
+    file: .secret.keycloak-admin-user
+  KEYCLOAK_ADMIN_PASSWORD:
+    file: .secret.keycloak-admin-pass
+
+services:
+  keycloak:
+    image: ghcr.io/dsbferris/pg-keycloak:latest
+    command: start
+    secrets:
+      - KC_DB_PASSWORD
+      - KEYCLOAK_ADMIN
+      - KEYCLOAK_ADMIN_PASSWORD
