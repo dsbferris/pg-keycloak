@@ -4,10 +4,9 @@ FROM ${IMAGE}:${VERSION}
 
 WORKDIR /opt/keycloak
 
-#RUN /opt/keycloak/bin/kc.sh build
-
 COPY ./improvised_secrets.sh /opt/keycloak/bin/improvised_secrets.sh
 
+RUN /opt/keycloak/bin/kc.sh build --db=postgres
 
 ENTRYPOINT ["/opt/keycloak/bin/improvised_secrets.sh", "/opt/keycloak/bin/kc.sh"]
 
