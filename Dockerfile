@@ -1,4 +1,4 @@
-ARG IMAGE=quay.io/keycloak/keycloak
+ARG IMAGE=keycloak/keycloak
 ARG VERSION=latest
 FROM ${IMAGE}:${VERSION}
 
