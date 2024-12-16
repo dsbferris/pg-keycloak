@@ -25,6 +25,7 @@ jobs:
     - name: Fetch versions
       run: |
         IMAGE=${{ vars.UPSTREAM_IMAGE }}
+        MY_IMAGE_NAME=${{ vars.MY_IMAGE_NAME }}
         # Get image info
         CURL_JSON=$(curl -s https://hub.docker.com/v2/repositories/$IMAGE/tags)
 
@@ -34,11 +35,15 @@ jobs:
 
         # versions as comma separated list
         # sed removed trailing comma
-        VERSIONS=$( echo $CURL_JSON | jq -r '.results[] | select(.digest == "'$LATEST_DIGEST'") | .name' | tr '\n' ',' | sed 's/,$//')
-        echo "versions with that digest: $VERSIONS"
+        VERSIONS_DOCKERHUB=$( echo $CURL_JSON | jq -r '.results[] | select(.digest == "'$LATEST_DIGEST'") | "'${MY_IMAGE_NAME}':" +  .name' | tr '\n' ',' | sed 's/,$//')
+        echo "dockerhub versions with that digest: $VERSIONS_DOCKERHUB"
+
+        VERSIONS_GITHUB=$( echo $CURL_JSON | jq -r '.results[] | select(.digest == "'$LATEST_DIGEST'") | "ghcr.io/'${MY_IMAGE_NAME}':" +  .name' | tr '\n' ',' | sed 's/,$//')
+        echo "github versions with that digest: $VERSIONS_GITHUB"
 
         echo "LATEST_DIGEST=$LATEST_DIGEST" >> "$GITHUB_ENV"
-        echo "VERSIONS=$VERSIONS" >> "$GITHUB_ENV"
+        echo "VERSIONS_DOCKERHUB=$VERSIONS_DOCKERHUB" >> "$GITHUB_ENV"
+        echo "VERSIONS_GITHUB=$VERSIONS_GITHUB" >> "$GITHUB_ENV"
 
     - name: Build and push to Docker Hub
       uses: docker/build-push-action@v3
@@ -49,7 +54,7 @@ jobs:
         build-args: |
           IMAGE=${{ vars.UPSTREAM_IMAGE }}@${{ env.LATEST_DIGEST }}
         push: true
-        tags: ${{ env.VERSIONS }}
+        tags: ${{ env.VERSIONS_DOCKERHUB }}
 
     - name: Notify about new build
-      run: echo "Built and pushed version(s) ${{ env.VERSIONS }} to Docker Hub from original image digest ${{ env.LATEST_DIGEST }}"
+      run: echo "Built and pushed version(s) ${{ env.VERSIONS_DOCKERHUB }} to Docker Hub from original image digest ${{ env.LATEST_DIGEST }}"
