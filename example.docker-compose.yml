@@ -13,8 +13,37 @@ secrets:
 services:
   keycloak:
     image: ghcr.io/dsbferris/pg-keycloak:latest
-    command: start
+    command: start --optimized
     secrets:
       - KC_DB_PASSWORD
       - KEYCLOAK_ADMIN
       - KEYCLOAK_ADMIN_PASSWORD
+    environment:
+      # these three are already set by 'kc.sh build' in Dockerfile
+      # - KC_DB=postgres
+      # - KC_HEALTH_ENABLED=true
+      # - KC_METRICS_ENABLED=false
+
+      # DB
+      - KC_DB_URL_HOST=postgres
+      - KC_DB_URL_PORT=5432
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_URL_DATABASE=keycloak
+      
+      # everything below here is from my homelab traefik setup
+      # compatible with dsbferris/new-traefik-forward-auth
+      - KC_HOSTNAME=keycloak.example.com
+      
+      - KC_PROXY_HEADERS=xforwarded  # this is the new PROXY_ADDRESS_FORWARDING
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_PORT=8080
+    networks:
+      - traefik
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+      traefik.enable: true
+      traefik.http.services.keycloak.loadbalancer.server.port: 8080
+      traefik.http.routers.keycloak.entrypoints: websecure
+      traefik.http.routers.keycloak.rule: Host(`keycloak.example.com`)
+      traefik.http.routers.keycloak.middlewares: lan-only@file
+    
