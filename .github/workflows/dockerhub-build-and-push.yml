@@ -37,8 +37,8 @@ jobs:
         VERSIONS=$( echo $CURL_JSON | jq -r '.results[] | select(.digest == "'$LATEST_DIGEST'") | .name' | tr '\n' ',' | sed 's/,$//')
         echo "versions with that digest: $VERSIONS"
 
-        echo "LATEST_DIGEST=$LATEST_DIGEST" >> $GITHUB_ENV
-        echo "VERSIONS=$VERSIONS" >> $GITHUB_ENV
+        echo "LATEST_DIGEST=$LATEST_DIGEST" >> "$GITHUB_ENV"
+        echo "VERSIONS=$VERSIONS" >> "$GITHUB_ENV"
 
     - name: Build and push to Docker Hub
       uses: docker/build-push-action@v3
@@ -47,8 +47,7 @@ jobs:
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         build-args: |
-          IMAGE=${{ env.UPSTREAM_IMAGE }}
-          DIGEST=${{ env.LATEST_DIGEST }}
+          IMAGE=${{ vars.UPSTREAM_IMAGE }}@${{ env.LATEST_DIGEST }}
         push: true
         tags: ${{ env.VERSIONS }}
 

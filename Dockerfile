@@ -1,10 +1,6 @@
-ARG IMAGE=keycloak/keycloak
+ARG IMAGE=keycloak/keycloak:latest
 
-# ARG VERSION=latest
-# FROM --platform=$BUILDPLATFORM $IMAGE:$VERSION
-
-ARG DIGEST
-FROM --platform=${BUILDPLATFORM} ${IMAGE}@${DIGEST}
+FROM --platform=$BUILDPLATFORM $IMAGE
 
 WORKDIR /opt/keycloak
 
