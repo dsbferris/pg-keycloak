@@ -1,13 +1,16 @@
 ARG IMAGE=keycloak/keycloak
-ARG VERSION=latest
 
-FROM --platform=$BUILDPLATFORM $IMAGE:$VERSION
+# ARG VERSION=latest
+# FROM --platform=$BUILDPLATFORM $IMAGE:$VERSION
+
+ARG DIGEST
+FROM --platform=${BUILDPLATFORM} ${IMAGE}@${DIGEST}
 
 WORKDIR /opt/keycloak
 
 COPY ./improvised_secrets.sh /opt/keycloak/bin/improvised_secrets.sh
 
-RUN /opt/keycloak/bin/kc.sh build --db=postgres
+RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled true --metrics-enabled false
 
 ENTRYPOINT ["/opt/keycloak/bin/improvised_secrets.sh", "/opt/keycloak/bin/kc.sh"]
 
