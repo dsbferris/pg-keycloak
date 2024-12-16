@@ -1,0 +1,56 @@
+name: Docker Build and Push
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # Runs every 12 hours at minute 0 of each hour
+  workflow_dispatch:        # Allows manual triggering of the workflow
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Fetch versions
+      run: |
+        IMAGE=${{ env.UPSTREAM_IMAGE }}
+        # Get image info
+        CURL_JSON=$(curl -s https://hub.docker.com/v2/repositories/$IMAGE/tags)
+
+        # Query for digest of image "latest"
+        LATEST_DIGEST=$( echo $CURL_JSON | jq -r '.results[] | select(.name == "latest") | .digest')
+        echo "digest of latest: $LATEST_DIGEST"
+
+        # versions as comma separated list
+        # sed removed trailing comma
+        VERSIONS=$( echo $CURL_JSON | jq -r '.results[] | select(.digest == "'$LATEST_DIGEST'") | .name' | tr '\n' ',' | sed 's/,$//')
+        echo "versions with that digest: $VERSIONS"
+
+        echo "LATEST_DIGEST=$LATEST_DIGEST" >> $GITHUB_ENV
+        echo "VERSIONS=$VERSIONS" >> $GITHUB_ENV
+
+    - name: Build and push to Docker Hub
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        build-args: |
+          IMAGE=${{ env.UPSTREAM_IMAGE }}
+          DIGEST=${{ env.LATEST_DIGEST }}
+        push: true
+        tags: ${{ env.VERSIONS }}
+
+    - name: Notify about new build
+      run: echo "Built and pushed version(s) ${{ env.VERSIONS }} to Docker Hub from original image digest ${{ env.LATEST_DIGEST }}"
